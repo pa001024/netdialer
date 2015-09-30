@@ -97,7 +97,7 @@ type loginResult struct {
 
 func (this *Dialer) dial_getinfo() (info *loginInfo, err error) {
 	defer util.Catch(&err)
-	body := ioutil.NopCloser(strings.NewReader((url.Values{"wlanuserip": {"10.0.1.2"}}).Encode()))
+	body := ioutil.NopCloser(strings.NewReader((url.Values{"wlanuserip": {this.userIP}}).Encode()))
 	req, err := http.NewRequest("POST", "http://115.239.134.163:8080/showlogin.do", body)
 	util.Try(err)
 	req.Header.Set("User-Agent", "China Telecom Client")
@@ -144,6 +144,10 @@ func (this *Dialer) RefreshIP() {
 			return
 		}
 	}
+}
+
+func (this *Dialer) SetIP(v string) {
+	this.userIP = v
 }
 
 // 路由拨号加密用户名
