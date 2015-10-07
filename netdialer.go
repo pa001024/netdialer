@@ -12,13 +12,14 @@ import (
 
 const (
 	NET_PWD_MASK = "7%ChIna3#@Net*%"
+	RADIUS       = "singlenet01" //"\x73\x69\x6e\x67\x6c\x65\x6e\x65\x74\x30\x31"
 )
 
 type Dialer struct {
 	username    string
 	rawPassword string
 	password    string
-	userIP      string
+	UserIP      string
 	uuid        string
 	logoffURL   string
 	ratingtype  string
@@ -79,7 +80,7 @@ func (this *Dialer) ConnectDirect() (err error) {
 	util.Try(err)
 	rst, err := this.dial_login(info)
 	util.Try(err)
-	util.INFO.Log(rst)
+	util.DEBUG.Log(rst)
 	return
 }
 
@@ -97,7 +98,7 @@ type loginResult struct {
 
 func (this *Dialer) dial_getinfo() (info *loginInfo, err error) {
 	defer util.Catch(&err)
-	body := ioutil.NopCloser(strings.NewReader((url.Values{"wlanuserip": {this.userIP}}).Encode()))
+	body := ioutil.NopCloser(strings.NewReader((url.Values{"wlanuserip": {this.UserIP}}).Encode()))
 	req, err := http.NewRequest("POST", "http://115.239.134.163:8080/showlogin.do", body)
 	util.Try(err)
 	req.Header.Set("User-Agent", "China Telecom Client")
@@ -140,14 +141,10 @@ func (this *Dialer) SetPassword(pwd string) {
 func (this *Dialer) RefreshIP() {
 	for _, v := range util.GetIPLocal() {
 		if v[:3] == "10." {
-			this.userIP = v
+			this.UserIP = v
 			return
 		}
 	}
-}
-
-func (this *Dialer) SetIP(v string) {
-	this.userIP = v
 }
 
 // 路由拨号加密用户名
@@ -160,9 +157,9 @@ func (this *Dialer) getCryptUsername() string {
 		rune(time & 0xff),
 	})
 	data += this.username[:strings.IndexRune(this.username, '@')]
-	data += string(util.DecodeJsHex("73696e676c656e65743031"))
+	data += RADIUS
 	aftermd5 := util.Md5String(data)
-	util.INFO.Log(aftermd5)
+	util.DEBUG.Log(aftermd5)
 	sig := aftermd5[:2]
 	temp := make([]byte, 32)
 	timechar := []byte{
@@ -187,7 +184,7 @@ func (this *Dialer) getCryptUsername() string {
 	temp[5] = (timeHash[3] & 3) << 4
 	sig2 := ""
 	for i := 0; i < 6; i++ {
-		var tp = temp[i] + 0x020
+		var tp = temp[i] + 0x20
 		if tp >= 0x40 {
 			tp++
 		}

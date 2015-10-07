@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"flag"
+	"os"
 	"time"
 
 	"github.com/pa001024/netdialer"
@@ -16,6 +18,7 @@ func main() {
 	routerUser := flag.String("ru", "admin", "router User")
 	routerPwd := flag.String("rp", "admin", "router password")
 	noCheck := flag.Bool("nc", false, "no check:dont need check?")
+	realIP := flag.String("ip", "local", "real IP, 'stdin' or 'local' works")
 	flag.Parse()
 	if len(*username) < 12 || len(*password) != 6 {
 		util.ERROR.Log("Invalid username or password")
@@ -23,6 +26,15 @@ func main() {
 		return
 	}
 	d := netdialer.NewDialer(*username, *password)
+	if *realIP != "" && *realIP != "local" {
+		if *realIP == "stdin" {
+			in := bufio.NewReader(os.Stdin)
+			str, _ := in.ReadString(0)
+			d.UserIP = str
+		} else {
+			d.UserIP = *realIP
+		}
+	}
 	var err error
 	if *isRouter {
 		d.Router.Addr = *routerIP
