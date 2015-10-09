@@ -56,9 +56,11 @@ func main() {
 }
 
 func check() {
-	<-time.After(time.Second * 2)
+	<-time.After(time.Second * 5)
 	ip := util.GetIPInfo()
-	if ip != nil {
+	if ip != nil && ip.IP != "" {
 		util.INFO.Log("连接成功, 当前IP:", ip.IP)
+	} else {
+		util.INFO.Log("连接失败")
 	}
 }
