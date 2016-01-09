@@ -2,6 +2,7 @@ package netdialer
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -55,21 +56,8 @@ func NewDialer(username, password string) (obj *Dialer) {
 
 // 路由器拨号
 func (this *Dialer) ConnectRouter() (err error) {
-	defer util.Catch(&err)
-	req, err := http.NewRequest("GET", "http://"+this.Router.Addr+"/userRpm/PPPoECfgRpm.htm?wan=0&wantype=2&acc="+
-		strings.Replace(strings.Replace(url.QueryEscape(this.getCryptUsername()), "+", "%20", -1), "%40", "@", -1)+
-		"&psw="+this.rawPassword+"&confirm="+this.rawPassword+
-		"&specialDial=0&SecType=0&sta_ip=0.0.0.0&sta_mask=0.0.0.0&linktype=4&waittime2=0&Connect=%C1%AC+%BD%D3", nil)
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Content-Type", "text/plain; Charset=UTF-8")
-	req.Header.Set("Connection", "Close")
-	req.Header.Set("Referer", req.URL.String())
-
-	req.SetBasicAuth(this.Router.User, this.Router.Pwd)
-	util.Try(err)
-	res, err := http.DefaultClient.Do(req)
-	util.Try(err)
-	res.Body.Close()
+	fmt.Println(url.QueryEscape(this.getCryptUsername()))
+	fmt.Println(this.rawPassword)
 	return
 }
 
@@ -79,6 +67,17 @@ func (this *Dialer) ConnectDirect() (err error) {
 	info, err := this.dial_getinfo()
 	util.Try(err)
 	rst, err := this.dial_login(info)
+	util.Try(err)
+	util.DEBUG.Log(rst)
+	return
+}
+
+//本地拨号
+func (this *Dialer) DisconnectDirect() (err error) {
+	defer util.Catch(&err)
+	info, err := this.dial_getinfo()
+	util.Try(err)
+	rst, err := this.dial_logout(info)
 	util.Try(err)
 	util.DEBUG.Log(rst)
 	return
@@ -105,10 +104,11 @@ func (this *Dialer) dial_getinfo() (info *loginInfo, err error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	util.Try(err)
-	de := xml.NewDecoder(res.Body)
-	info = &loginInfo{}
-	de.Decode(info)
+	data, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
+	info = &loginInfo{}
+	xml.Unmarshal(data, &info)
+	util.DEBUG.Log("[dial_getinfo] ", string(data))
 	return
 }
 func (this *Dialer) dial_login(info *loginInfo) (rst *loginResult, err error) {
@@ -126,10 +126,31 @@ func (this *Dialer) dial_login(info *loginInfo) (rst *loginResult, err error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	util.Try(err)
-	de := xml.NewDecoder(res.Body)
-	rst = &loginResult{}
-	de.Decode(rst)
+	data, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
+	rst = &loginResult{}
+	xml.Unmarshal(data, &rst)
+	util.DEBUG.Log("[dial_login] ", string(data))
+	return
+}
+
+func (this *Dialer) dial_logout(info *loginInfo) (rst *loginResult, err error) {
+	defer util.Catch(&err)
+	body := ioutil.NopCloser(strings.NewReader((url.Values{
+		"uuid":   {info.Uuid},
+		"userip": {info.UserIP},
+	}).Encode()))
+	req, err := http.NewRequest("POST", "http://115.239.134.163:8080/servlets/G3logoutServlet", body)
+	util.Try(err)
+	req.Header.Set("User-Agent", "China Telecom Client")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	res, err := http.DefaultClient.Do(req)
+	util.Try(err)
+	data, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	rst = &loginResult{}
+	xml.Unmarshal(data, &rst)
+	util.DEBUG.Log("[dial_logout] ", string(data))
 	return
 }
 
