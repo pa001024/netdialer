@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/pa001024/reflex/util"
@@ -50,7 +51,6 @@ func NewDialer(username, password string) (obj *Dialer) {
 		},
 	}
 	obj.SetPassword(password)
-	obj.RefreshIP()
 	return
 }
 
@@ -64,6 +64,7 @@ func (this *Dialer) ConnectRouter() (err error) {
 //本地拨号
 func (this *Dialer) ConnectDirect() (err error) {
 	defer util.Catch(&err)
+	this.checkIP()
 	info, err := this.dial_getinfo()
 	util.Try(err)
 	rst, err := this.dial_login(info)
@@ -75,12 +76,21 @@ func (this *Dialer) ConnectDirect() (err error) {
 //本地拨号
 func (this *Dialer) DisconnectDirect() (err error) {
 	defer util.Catch(&err)
+	this.checkIP()
 	info, err := this.dial_getinfo()
 	util.Try(err)
 	rst, err := this.dial_logout(info)
 	util.Try(err)
 	util.DEBUG.Log(rst)
 	return
+}
+
+func (this *Dialer) checkIP() {
+	r := regexp.MustCompile(`\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b`)
+	this.UserIP = r.FindString(this.UserIP)
+	if this.UserIP == "" {
+		this.RefreshIP()
+	}
 }
 
 type loginInfo struct {
@@ -93,6 +103,11 @@ type loginResult struct {
 	LogoffURL    string `xml:"AuthenticationReply>LogoffURL"`
 	Uuid         string `xml:"AuthenticationReply>Uuid"`
 	UserIP       string `xml:"AuthenticationReply>UserIP"`
+}
+type logoff struct {
+	MessageType  int    `xml:"LogoffReply>MessageType"`
+	ResponseCode int    `xml:"LogoffReply>ResponseCode"`
+	Date         string `xml:"LogoffReply>Date"`
 }
 
 func (this *Dialer) dial_getinfo() (info *loginInfo, err error) {
@@ -113,13 +128,15 @@ func (this *Dialer) dial_getinfo() (info *loginInfo, err error) {
 }
 func (this *Dialer) dial_login(info *loginInfo) (rst *loginResult, err error) {
 	defer util.Catch(&err)
-	body := ioutil.NopCloser(strings.NewReader((url.Values{
+	parms := url.Values{
 		"uuid":       {info.Uuid},
 		"userip":     {info.UserIP},
 		"username":   {this.username},
 		"password":   {this.rawPassword},
 		"ratingtype": {this.ratingtype},
-	}).Encode()))
+	}
+	body := ioutil.NopCloser(strings.NewReader(parms.Encode()))
+	util.DEBUG.Log("[dial_login] ", parms)
 	req, err := http.NewRequest("POST", info.LoginURL, body)
 	util.Try(err)
 	req.Header.Set("User-Agent", "China Telecom Client")
@@ -136,10 +153,12 @@ func (this *Dialer) dial_login(info *loginInfo) (rst *loginResult, err error) {
 
 func (this *Dialer) dial_logout(info *loginInfo) (rst *loginResult, err error) {
 	defer util.Catch(&err)
-	body := ioutil.NopCloser(strings.NewReader((url.Values{
+	parms := url.Values{
 		"uuid":   {info.Uuid},
 		"userip": {info.UserIP},
-	}).Encode()))
+	}
+	body := ioutil.NopCloser(strings.NewReader(parms.Encode()))
+	util.DEBUG.Log("[dial_logout] ", parms)
 	req, err := http.NewRequest("POST", "http://115.239.134.163:8080/servlets/G3logoutServlet", body)
 	util.Try(err)
 	req.Header.Set("User-Agent", "China Telecom Client")
