@@ -3,6 +3,12 @@ Netdialer
 
 The dialer for the fucking shanxun network in Zhejiang, written in go. 
 
+### for developer
+
+get this by following command
+
+> go get -v -u github.com/pa001024/netdialer/netdialer 
+
 简介
 ----
 
@@ -23,12 +29,12 @@ GUI版本使用说明
 
 内建几种路由器适配。（目前还没有 TP 真是抱歉 233）
 
-__注意：要使用路由模式，你需要先将网线插到路由器网口 然后进路由器后台
+__注意：要使用路由模式，你需要先将网线插到路由器WAN口 然后进路由器后台
 将WAN口设置为 DHCP 模式（也可能叫动态IP）。__
 
 然后打开软件，选择对应的模式并且改好路由器的地址密码（注意密码不是 WiFi 密码而是后台管理密码）等参数之后就可以直接用了。
 
-如果没有自己的路由器的模式 那么就去路由界面自行获取IP直接填到模式内即可
+如果没有自己的路由器的模式，那么就去路由界面自行获取IP直接填到模式内即可。
 
 
 命令行版本使用说明
@@ -40,28 +46,28 @@ __注意：要使用路由模式，你需要先将网线插到路由器网口 �
 
 #### 开始连接
 
-日常使用方法如下
+日常使用方法如下：
 
-如果是本地拨号
+如果是本地拨号：
 > netdialer -u xx -p xx
 
-如果是路由器
+如果是路由器：
 > netdialer -ip hiwifi -ra xx -ru xx -rp xx -u xx -p xx
 
 #### 断开连接
 
-ps.断开连接可以不要闪讯账号密码
+ps.断开连接可以不要闪讯账号密码。
 
-如果是本地拨号
+如果是本地拨号：
 > netdialer -d
 
-如果是路由器
+如果是路由器：
 > netdialer -ip hiwifi -ra xx -ru xx -rp xx
 
 
 #### 支持自己开发路由器适配
 
-只要`-ip stdin`并用管道传入WAN口IP即可
+只要`-ip stdin`并用管道传入WAN口IP即可。
 
 > 比如 `yourrouter -u xxx -p xxxx | netdialer -u xxx -p xxx -ip stdin`
 
@@ -71,7 +77,7 @@ ps.断开连接可以不要闪讯账号密码
 
 #### 关于路由模式2
 
-也就是 `-r` 参数
+（也就是 `-r` 参数）
 
 这个是通过WAN口直接拨号的，本程序没有提供相应的适配器（除了TP），因为生成的用户名每五秒就会变，所以实用性不高。
 
