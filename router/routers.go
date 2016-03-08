@@ -78,6 +78,21 @@ func GetLanIP_Openwrt(address, password string) string {
 	str := string(bin)
 	ex := regexp.MustCompile(`/cgi-bin/luci/;stok=([a-z0-9]{32})`) // /cgi-bin/luci/;stok=dfc41c0ba4035a36922a6df4e26f6dd7/
 	li := ex.FindStringSubmatch(str)
+	if len(li) == 0 {
+		// Login ...
+		jar, _ = cookiejar.New(nil)
+		client = &http.Client{Jar: jar}
+		res, err = client.PostForm("http://"+address+"/", url.Values{"username": {"root"}, "password": {password}})
+		if err != nil {
+			fmt.Println(err)
+			return ""
+		}
+		bin, _ = ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		str = string(bin)
+		ex = regexp.MustCompile(`/cgi-bin/luci/;stok=([a-z0-9]{32})`) // /cgi-bin/luci/;stok=dfc41c0ba4035a36922a6df4e26f6dd7/
+		li = ex.FindStringSubmatch(str)
+	}
 	if len(li) > 1 {
 		res, err = client.Get("http://" + address + li[0] + "?status=1")
 		if err != nil {
@@ -87,7 +102,7 @@ func GetLanIP_Openwrt(address, password string) string {
 		bin, _ = ioutil.ReadAll(res.Body)
 		res.Body.Close()
 		str = string(bin)
-		ex = regexp.MustCompile(`"ipaddr":"(10\.[\.0-9]+?)",`)
+		ex = regexp.MustCompile(`"ipaddr":\s*"(10\.[\.0-9]+?)",`)
 		li = ex.FindStringSubmatch(str)
 		if len(li) > 1 {
 			return li[1]

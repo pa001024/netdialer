@@ -35,6 +35,10 @@ var (
 	}
 )
 
+const (
+	TITLE = "NDGUI v0.5.0"
+)
+
 func main() {
 	fout, _ := os.Create("dialer.log")
 	defer fout.Close()
@@ -89,7 +93,7 @@ func main() {
 	}()
 	MainWindow{
 		AssignTo: &mw,
-		Title:    "闪讯拨号器GUI v0.4.1",
+		Title:    TITLE,
 		MinSize:  Size{340, 0},
 		Layout:   VBox{},
 		DataBinder: DataBinder{
@@ -183,7 +187,7 @@ func main() {
 						Text:     "开始连接",
 						OnClicked: func() {
 							if mode.Text() == "10.0.x.x(手动填写)" {
-								walk.MsgBox(mw, "请填写IP", "手动填写需要自己获取IP 你可在路由器中自己查找", walk.MsgBoxOK)
+								walk.MsgBox(mw, "请填写IP", "手动填写需要自己获取IP 你可在路由器中自己查找 本地拨号请用local", walk.MsgBoxOK)
 								return
 							}
 							lb.SetText("连接中...")
@@ -192,7 +196,13 @@ func main() {
 							go func() {
 								d := netdialer.NewDialer(usr.Text(), pwd.Text())
 								d.UserIP = selectMode(mode.Text())
+								if d.UserIP == "" {
+									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
+									d = nil
+									return
+								}
 								d.ConnectDirect()
+								mw.SetTitle(TITLE + " [" + d.UserIP + "]")
 								d = nil
 								lb.SetEnabled(true)
 								rb.SetEnabled(true)
@@ -219,7 +229,13 @@ func main() {
 							go func() {
 								d := netdialer.NewDialer(usr.Text(), pwd.Text())
 								d.UserIP = selectMode(mode.Text())
+								if d.UserIP == "" {
+									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
+									d = nil
+									return
+								}
 								err := d.DisconnectDirect()
+								mw.SetTitle(TITLE + " [" + d.UserIP + "]")
 								d = nil
 								lb.SetEnabled(true)
 								rb.SetEnabled(true)
@@ -237,6 +253,7 @@ func main() {
 		},
 	}.Run()
 	saveConfig(config)
+	bo.Flush()
 }
 
 func selectMode(typ string) (rst string) {
