@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -56,6 +57,38 @@ func GetLanIP_Hiwifi(address, password string) string {
 		res.Body.Close()
 		str = string(bin)
 		ex = regexp.MustCompile(`"ip": "(10\..+?)" }`)
+		li = ex.FindStringSubmatch(str)
+		if len(li) > 1 {
+			return li[1]
+		}
+	}
+	return ""
+}
+
+func GetLanIP_HiwifiV2(address, password string) string {
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	res, err := client.Get("http://" + address + "/cgi-bin/turbo/admin_web/login_admin?" + url.Values{"username": {"admin"}, "password": {password}}.Encode())
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	bin, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	str := string(bin)
+	ex := regexp.MustCompile(`"stok": "(.+?)",`) // /cgi-bin/turbo/;stok=8ab11a0e6a60d45e3658a4f81b0f2884
+	li := ex.FindStringSubmatch(str)
+	if len(li) > 1 {
+		postBody := bytes.NewBufferString(`{"method":"network.wan.get_simple_info","data":{}}`)
+		res, err := client.Post("http://"+address+"/cgi-bin/turbo"+li[1]+"/proxy/call", "application/x-www-form-urlencoded", postBody)
+		if err != nil {
+			fmt.Println(err)
+			return ""
+		}
+		bin, _ = ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		str = string(bin)
+		ex = regexp.MustCompile(`"wan_ip":"(10\..+?)"`)
 		li = ex.FindStringSubmatch(str)
 		if len(li) > 1 {
 			return li[1]

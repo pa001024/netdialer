@@ -36,7 +36,7 @@ var (
 )
 
 const (
-	TITLE = "NDGUI v0.5.0"
+	TITLE = "NDGUI v0.5.1"
 )
 
 func main() {
@@ -44,6 +44,7 @@ func main() {
 	defer fout.Close()
 	bo := bufio.NewWriter(fout)
 	defer bo.Flush()
+	util.INFO.SetOutput(bo)
 	util.ERROR.SetOutput(bo)
 
 	bin, err := ioutil.ReadFile("config.json")
@@ -51,6 +52,7 @@ func main() {
 		json.Unmarshal(bin, config)
 	} else {
 		util.ERROR.Log(err)
+		err = nil
 	}
 
 	var usr, pwd *walk.LineEdit
@@ -209,8 +211,10 @@ func main() {
 								lb.SetText("开始连接")
 								if err == nil {
 									walk.MsgBox(mw, "连接成功", "感谢使用", walk.MsgBoxOK)
+									util.INFO.Log("连接成功: 感谢使用")
 								} else {
 									walk.MsgBox(mw, "连接失败", err.Error(), walk.MsgBoxOK)
+									util.INFO.Log("连接失败: ", err.Error())
 								}
 							}()
 						},
@@ -231,6 +235,7 @@ func main() {
 								d.UserIP = selectMode(mode.Text())
 								if d.UserIP == "" {
 									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
+									util.INFO.Log("连接失败: 请检查设置")
 									d = nil
 									return
 								}
@@ -242,8 +247,10 @@ func main() {
 								rb.SetText("断开连接")
 								if err == nil {
 									walk.MsgBox(mw, "断开成功", "感谢使用", walk.MsgBoxOK)
+									util.INFO.Log("断开成功: 感谢使用")
 								} else {
 									walk.MsgBox(mw, "断开失败", err.Error(), walk.MsgBoxOK)
+									util.INFO.Log("断开失败: ", err.Error())
 								}
 							}()
 						},
@@ -259,7 +266,10 @@ func main() {
 func selectMode(typ string) (rst string) {
 	switch typ {
 	case "hiwifi":
-		rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+		rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
+		if rst == "" {
+			rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+		}
 	case "openwrt":
 		rst = router.GetLanIP_Openwrt(config.RouterAddr, config.RouterPwd)
 	case "asus":

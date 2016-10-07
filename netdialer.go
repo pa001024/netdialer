@@ -175,7 +175,7 @@ func (this *Dialer) dial_logout(info *loginInfo) (rst *loginResult, err error) {
 
 func (this *Dialer) SetPassword(pwd string) {
 	this.rawPassword = pwd
-	this.password = util.AESCBCStringX(util.Md5(NET_PWD_MASK), []byte(pwd), true)
+	this.password = util.AESCBCStringX(util.MD5(NET_PWD_MASK), []byte(pwd), true)
 }
 
 func (this *Dialer) RefreshIP() {
@@ -198,7 +198,7 @@ func (this *Dialer) getCryptUsername() string {
 	})
 	data += this.username[:strings.IndexRune(this.username, '@')]
 	data += RADIUS
-	aftermd5 := util.Md5String(data)
+	aftermd5 := util.MD5String(data)
 	util.DEBUG.Log(aftermd5)
 	sig := aftermd5[:2]
 	temp := make([]byte, 32)
