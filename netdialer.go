@@ -54,10 +54,17 @@ func NewDialer(username, password string) (obj *Dialer) {
 	return
 }
 
-// 路由器拨号
+// 路由器拨号命令行调用
 func (this *Dialer) ConnectRouter() (err error) {
 	fmt.Println(url.QueryEscape(this.getCryptUsername()))
 	fmt.Println(this.rawPassword)
+	return
+}
+
+// 路由器拨号外部调用
+func (this *Dialer) GetRouterConnectInfo() (user, pass string) {
+	user = this.getCryptUsername()
+	pass = this.rawPassword
 	return
 }
 

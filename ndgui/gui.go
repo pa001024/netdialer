@@ -36,7 +36,7 @@ var (
 )
 
 const (
-	TITLE = "NDGUI v0.5.1"
+	TITLE = "NDGUI v0.5.2"
 )
 
 func main() {
@@ -201,6 +201,8 @@ func main() {
 								if d.UserIP == "" {
 									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
 									d = nil
+									lb.SetEnabled(true)
+									rb.SetEnabled(true)
 									return
 								}
 								d.ConnectDirect()
@@ -237,6 +239,8 @@ func main() {
 									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
 									util.INFO.Log("连接失败: 请检查设置")
 									d = nil
+									lb.SetEnabled(true)
+									rb.SetEnabled(true)
 									return
 								}
 								err := d.DisconnectDirect()
@@ -266,9 +270,12 @@ func main() {
 func selectMode(typ string) (rst string) {
 	switch typ {
 	case "hiwifi":
-		rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
+		rst = router.GetLanIP_HiwifiV3(config.RouterAddr, config.RouterPwd)
 		if rst == "" {
-			rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+			rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
+			if rst == "" {
+				rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+			}
 		}
 	case "openwrt":
 		rst = router.GetLanIP_Openwrt(config.RouterAddr, config.RouterPwd)

@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	VERSION = "netdialer CLI ver.0.4.2 by pa001024"
-	EXAMPLE = "usage example: > netdialer -ip 10.0.10.20 -u 18123123122@ZZZ.XY -p 123456"
+	VERSION = "netdialer CLI ver.0.4.3 by pa001024"
+	EXAMPLE = `usage example: > netdialer -ip 10.0.10.20 -u 18123123122@ZZZ.XY -p 123456
+	netdialer -ip hiwifi -ra 192.168.199.1 -rp 1231123 -u 18123123122@ZZZ.XY -p 123456`
 )
 
 type Config struct {
@@ -79,9 +80,12 @@ func main() {
 func selectMode(typ string) (rst string) {
 	switch typ {
 	case "hiwifi":
-		rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
+		rst = router.GetLanIP_HiwifiV3(config.RouterAddr, config.RouterPwd)
 		if rst == "" {
-			rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+			rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
+			if rst == "" {
+				rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
+			}
 		}
 	case "openwrt":
 		rst = router.GetLanIP_Openwrt(config.RouterAddr, config.RouterPwd)
