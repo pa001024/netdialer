@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -36,7 +37,7 @@ var (
 )
 
 const (
-	TITLE = "NDGUI v0.5.2"
+	TITLE = "NDGUI v0.6.0"
 )
 
 func main() {
@@ -77,6 +78,10 @@ func main() {
 				lusr.SetVisible(false)
 				lpwd.SetVisible(true)
 			case "openwrt":
+				laddr.SetVisible(true)
+				lusr.SetVisible(true)
+				lpwd.SetVisible(true)
+			case "tplinkwr700n":
 				laddr.SetVisible(true)
 				lusr.SetVisible(true)
 				lpwd.SetVisible(true)
@@ -127,7 +132,7 @@ func main() {
 					Label{Text: "模式", MaxSize: Size{60, 20}},
 					ComboBox{AssignTo: &mode,
 						Editable: true, Value: Bind("RouterType"),
-						Model:   []string{"local", "10.0.x.x(手动填写)", "openwrt", "hiwifi", "asus"},
+						Model:   []string{"local", "10.0.x.x(手动填写)", "openwrt", "hiwifi", "asus", "tplinkwr700n"},
 						MaxSize: Size{0, 20},
 						OnCurrentIndexChanged: func() {
 							switch mode.CurrentIndex() {
@@ -188,6 +193,7 @@ func main() {
 						AssignTo: &lb,
 						Text:     "开始连接",
 						OnClicked: func() {
+							mode.SetText(strings.TrimSpace(mode.Text()))
 							if mode.Text() == "10.0.x.x(手动填写)" {
 								walk.MsgBox(mw, "请填写IP", "手动填写需要自己获取IP 你可在路由器中自己查找 本地拨号请用local", walk.MsgBoxOK)
 								return
@@ -195,17 +201,23 @@ func main() {
 							lb.SetText("连接中...")
 							lb.SetEnabled(false)
 							rb.SetEnabled(false)
+
 							go func() {
 								d := netdialer.NewDialer(usr.Text(), pwd.Text())
 								d.UserIP = selectMode(mode.Text())
+
 								if d.UserIP == "" {
 									walk.MsgBox(mw, "连接失败", "请检查设置", walk.MsgBoxOK)
 									d = nil
 									lb.SetEnabled(true)
 									rb.SetEnabled(true)
 									return
+								} else if d.UserIP == "tplinkwr700n" {
+									user, pass := d.GetRouterConnectInfo()
+									router.SetWanInfo_TPLink(raddr.Text(), rusr.Text(), rpwd.Text(), user, pass)
+								} else {
+									d.ConnectDirect()
 								}
-								d.ConnectDirect()
 								mw.SetTitle(TITLE + " [" + d.UserIP + "]")
 								d = nil
 								lb.SetEnabled(true)
@@ -219,14 +231,20 @@ func main() {
 									util.INFO.Log("连接失败: ", err.Error())
 								}
 							}()
+
 						},
 					},
 					PushButton{
 						AssignTo: &rb,
 						Text:     "断开连接",
 						OnClicked: func() {
+							mode.SetText(strings.TrimSpace(mode.Text()))
 							if mode.Text() == "10.0.x.x(手动填写)" {
 								walk.MsgBox(mw, "请填写IP", "手动填写需要自己获取IP 你可在路由器中自己查找", walk.MsgBoxOK)
+								return
+							}
+							if mode.Text() == "tplinkwr700n" {
+								walk.MsgBox(mw, "无效操作", "此模式不存在断开", walk.MsgBoxOK)
 								return
 							}
 							rb.SetText("断开中...")
@@ -273,16 +291,17 @@ func selectMode(typ string) (rst string) {
 		rst = router.GetLanIP_HiwifiV3(config.RouterAddr, config.RouterPwd)
 		if rst == "" {
 			rst = router.GetLanIP_HiwifiV2(config.RouterAddr, config.RouterPwd)
-			if rst == "" {
-				rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
-			}
+		}
+		if rst == "" {
+			rst = router.GetLanIP_Hiwifi(config.RouterAddr, config.RouterPwd)
 		}
 	case "openwrt":
 		rst = router.GetLanIP_Openwrt(config.RouterAddr, config.RouterPwd)
 	case "asus":
 		rst = router.GetLanIP_Asus(config.RouterAddr, config.RouterUser, config.RouterPwd)
+	// case "tplinkwr700n":
 	default:
-		rst = config.RouterType
+		rst = typ
 	}
 	return
 }
