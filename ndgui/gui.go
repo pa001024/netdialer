@@ -37,7 +37,7 @@ var (
 )
 
 const (
-	TITLE = "NDGUI v0.6.0"
+	TITLE = "NDGUI v0.6.1"
 )
 
 func main() {

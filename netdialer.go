@@ -2,6 +2,7 @@ package netdialer
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -106,7 +107,8 @@ type loginInfo struct {
 	Uuid     string `xml:"Redirect>Uuid"`
 }
 type loginResult struct {
-	ResponseCode string `xml:"AuthenticationReply>ResponseCode"`
+	MessageType  int    `xml:"AuthenticationReply>MessageType"`
+	ResponseCode int    `xml:"AuthenticationReply>ResponseCode"`
 	LogoffURL    string `xml:"AuthenticationReply>LogoffURL"`
 	Uuid         string `xml:"AuthenticationReply>Uuid"`
 	UserIP       string `xml:"AuthenticationReply>UserIP"`
@@ -155,6 +157,13 @@ func (this *Dialer) dial_login(info *loginInfo) (rst *loginResult, err error) {
 	rst = &loginResult{}
 	xml.Unmarshal(data, &rst)
 	util.DEBUG.Log("[dial_login] ", string(data))
+	if rst.ResponseCode != 200 {
+		if rst.ResponseCode == 73 {
+			err = errors.New("请检查账号是否正常 有可能是欠费")
+		} else {
+			err = errors.New("错误(" + string(rst.ResponseCode) + ") 请检查账号是否正常")
+		}
+	}
 	return
 }
 
@@ -177,6 +186,13 @@ func (this *Dialer) dial_logout(info *loginInfo) (rst *loginResult, err error) {
 	rst = &loginResult{}
 	xml.Unmarshal(data, &rst)
 	util.DEBUG.Log("[dial_logout] ", string(data))
+	if rst.ResponseCode != 200 {
+		if rst.ResponseCode == 73 {
+			err = errors.New("请检查账号是否正常 有可能是欠费")
+		} else {
+			err = errors.New("错误(" + string(rst.ResponseCode) + ") 请检查账号是否正常")
+		}
+	}
 	return
 }
 
